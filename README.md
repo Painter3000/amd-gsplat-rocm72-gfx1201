@@ -5,7 +5,8 @@
 
 **GSplat** is an open-source library for GPU-accelerated rasterization of Gaussians with Python bindings. It is inspired by the SIGGRAPH paper [3D Gaussian Splatting for Real-Time Rendering of Radiance Fields](https://repo.georgerobotics.com/papers/kerbl23.pdf).
 
-This repository is the HIP port of the original `GSplat` project, optimized for **ROCm**, and designed to run on AMD Instinct™ GPUs. 
+This fork extends AMD's HIP port of GSplat to RDNA 4 (`gfx1201`) using
+ROCm 7.2 and PyTorch 2.13, while retaining the upstream MI300X history.
 
 ## System Requirements
 
