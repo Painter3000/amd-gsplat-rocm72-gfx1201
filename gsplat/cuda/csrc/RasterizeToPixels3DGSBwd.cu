@@ -17,7 +17,7 @@ namespace gsplat {
 namespace cg = cooperative_groups;
 
 //compiler issue with mov_dpp intrinsic seen in Rocm 6.4.1, so mov_dpp intrinsic is temporarily commented out and replaced with rocprim which also uses dpp when in single wave
-#if USE_ROCM
+#if USE_ROCM && GSPLAT_HIP_WARP_SIZE == 64
 template <typename T>
 __device__ void dpp_sclr_warpSum(T &val) {
 	// T tmp = val + __builtin_amdgcn_mov_dpp(val, 0x118, 0xf, 0xf, 1); //ROW_SHR8
@@ -473,7 +473,7 @@ __global__ void rasterize_to_pixels_3dgs_bwd_kernel(
         (float *)&conic_batch[batch_allocation_size]; // [batch_allocation_size * CDIM]
     
     #if USE_ROCM
-    using warp_reduce_float_t = rocprim::warp_reduce<float,64>;
+    using warp_reduce_float_t = rocprim::warp_reduce<float, GSPLAT_HIP_WARP_SIZE>;
     auto* warp_storage_base   =
     (typename warp_reduce_float_t::storage_type*)
         (rgbs_batch + batch_allocation_size * CDIM);
@@ -500,19 +500,13 @@ __global__ void rasterize_to_pixels_3dgs_bwd_kernel(
     const uint32_t tr = block.thread_rank();
     
     #if USE_ROCM
-    cg::thread_block_tile<64> warp = cg::tiled_partition<64>(block);
+    cg::thread_block_tile<GSPLAT_HIP_WARP_SIZE> warp = cg::tiled_partition<GSPLAT_HIP_WARP_SIZE>(block);
     #else
     cg::thread_block_tile<32> warp = cg::tiled_partition<32>(block);
     #endif
     
     #if USE_ROCM
-        __shared__ typename rocprim::warp_reduce<int32_t, 64>::storage_type warp_storage;
-        rocprim::warp_reduce<int32_t, 64> wreduce;
-        int32_t warp_bin_final;
-        wreduce.reduce( bin_final,            // 1) value held by this lane
-                warp_bin_final,               // 2) reference that will receive the result
-                warp_storage,                 // 3) shared-memory storage
-                rocprim::maximum<int32_t>()); // 4) binary operator
+    const int32_t warp_bin_final = reduce_max_shuffle(bin_final);
     #else
     const int32_t warp_bin_final =
         cg::reduce(warp, bin_final, cg::greater<int>());
@@ -644,12 +638,12 @@ __global__ void rasterize_to_pixels_3dgs_bwd_kernel(
                 }
             }
             #if USE_ROCM
-            rocprim_warpSum<CDIM, 64>(v_rgb_local, warp_storage_base);   // CDIM-sized float array
-            rocprim_warpSum<64>(v_conic_local, warp_storage_base); // float
-            rocprim_warpSum<64>(v_xy_local, warp_storage_base);    // vec2
+            rocprim_warpSum<CDIM, GSPLAT_HIP_WARP_SIZE>(v_rgb_local, warp_storage_base);   // CDIM-sized float array
+            rocprim_warpSum<GSPLAT_HIP_WARP_SIZE>(v_conic_local, warp_storage_base); // float
+            rocprim_warpSum<GSPLAT_HIP_WARP_SIZE>(v_xy_local, warp_storage_base);    // vec2
             if (v_means2d_abs != nullptr)
-                rocprim_warpSum<64>(v_xy_abs_local, warp_storage_base);// vec2
-            rocprim_warpSum<64>(v_opacity_local, warp_storage_base);// float
+                rocprim_warpSum<GSPLAT_HIP_WARP_SIZE>(v_xy_abs_local, warp_storage_base);// vec2
+            rocprim_warpSum<GSPLAT_HIP_WARP_SIZE>(v_opacity_local, warp_storage_base);// float
             if (warp.thread_rank() == 0) {
                 int32_t g = id_batch[t]; // flatten index in [I * N] or [nnz]
                 float *v_rgb_ptr = (float *)(v_colors) + CDIM * g;
@@ -761,7 +755,7 @@ void launch_rasterize_to_pixels_3dgs_bwd_kernel(
     const uint32_t block_size = tile_size * tile_size;
     uint32_t max_batch_size;
     int64_t shmem_size;
-    if (block_size == 64) { // wave64-optimized path
+    if (GSPLAT_HIP_WARP_SIZE == 64 && block_size == 64) { // Wave64-only path
       max_batch_size = 32;
       //max_batch_size = min(max_batch_size, block_size);
       if (CDIM <= 32) {
@@ -776,9 +770,9 @@ void launch_rasterize_to_pixels_3dgs_bwd_kernel(
       if (CDIM <= 16) {
         max_batch_size = block_size;
       }
-      const uint32_t warps_per_block = (block_size + 63) / 64; // for 64-lane warp
+      const uint32_t warps_per_block = (block_size + GSPLAT_HIP_WARP_SIZE - 1) / GSPLAT_HIP_WARP_SIZE; // for 64-lane warp
       std::size_t warp_scratch_bytes =
-        warps_per_block * sizeof(typename rocprim::warp_reduce<float,64>::storage_type);
+        warps_per_block * sizeof(typename rocprim::warp_reduce<float, GSPLAT_HIP_WARP_SIZE>::storage_type);
       shmem_size =
         max_batch_size *
         (sizeof(int32_t) + sizeof(vec3) + sizeof(vec3) + sizeof(float) * CDIM) + warp_scratch_bytes;
@@ -813,9 +807,7 @@ void launch_rasterize_to_pixels_3dgs_bwd_kernel(
         );
     }
 #else
-    auto KERNEL = (block_size == 64) ?
-	    rasterize_bs64_to_pixels_3dgs_bwd_kernel<CDIM, float> :
-	    rasterize_to_pixels_3dgs_bwd_kernel<CDIM, float>;
+    auto KERNEL = rasterize_to_pixels_3dgs_bwd_kernel<CDIM, float>;
     hipError_t err = hipFuncSetAttribute(
         reinterpret_cast<void*>(KERNEL), // Cast to void*
         hipFuncAttributeMaxDynamicSharedMemorySize,

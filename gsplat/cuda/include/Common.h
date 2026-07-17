@@ -20,6 +20,12 @@
 
 namespace gsplat {
 
+#if USE_ROCM
+#ifndef GSPLAT_HIP_WARP_SIZE
+#define GSPLAT_HIP_WARP_SIZE 32
+#endif
+#endif
+
 //
 // Some Macros.
 //

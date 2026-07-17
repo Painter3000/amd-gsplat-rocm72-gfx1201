@@ -1498,20 +1498,23 @@ def rasterization_2dgs(
     isect_offsets = isect_offset_encode(isect_ids, I, tile_width, tile_height)
     isect_offsets = isect_offsets.reshape(batch_dims + (C, tile_height, tile_width))
 
-    # TODO: SH also suport N-D.
-    # Compute the per-view colors
-    # if not (
-    #     colors.dim() == num_batch_dims + 3 and sh_degree is None
-    # ):  # silently support [..., C, N, D] color.
-    #     colors = (
-    #         colors.view(B, N, -1)[batch_ids, gaussian_ids]
-    #         if packed
-    #         else colors[..., None, :, :].expand((-1,) * num_batch_dims + (C, -1, -1))
-    #     )  # [nnz, D] or [..., C, N, 3]
-    # else:
-    #     if packed:
-    #         colors = colors.view(B, C, N, -1)[batch_ids, camera_ids, gaussian_ids, :]
-    if sh_degree is not None:  # SH coefficients
+    # Normalize post-activation colors for the rasterizer.
+    # The public API accepts either per-Gaussian [..., N, D] or per-view
+    # [..., C, N, D] colors.  Packed kernels require [nnz, D], while unpacked
+    # kernels require [..., C, N, D].
+    if sh_degree is None:
+        if packed:
+            if colors.dim() == num_batch_dims + 2:
+                colors = colors.reshape(B, N, -1)[batch_ids, gaussian_ids]
+            else:
+                colors = colors.reshape(B, C, N, -1)[
+                    batch_ids, camera_ids, gaussian_ids
+                ]
+        elif colors.dim() == num_batch_dims + 2:
+            colors = torch.broadcast_to(
+                colors[..., None, :, :], batch_dims + (C, N, -1)
+            )
+    else:  # SH coefficients
         camtoworlds = torch.inverse(viewmats)
         if packed:
             dirs = means[..., gaussian_ids, :] - camtoworlds[..., camera_ids, :3, 3]

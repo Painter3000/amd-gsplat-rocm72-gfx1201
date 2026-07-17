@@ -579,7 +579,10 @@ def rasterize_to_pixels(
         - **Rendered alphas**. [..., image_height, image_width, 1]
     """
 
-    image_dims = means2d.shape[:-2]
+    # Packed means2d=[nnz, 2] does not carry image dimensions.  The
+    # intersection offsets retain [..., C, tile_height, tile_width] in
+    # both packed and unpacked modes.
+    image_dims = isect_offsets.shape[:-2]
     channels = colors.shape[-1]
     device = means2d.device
     if packed:
@@ -2265,7 +2268,10 @@ def rasterize_to_pixels_2dgs(
 
 
     """
-    image_dims = means2d.shape[:-2]
+    # Packed means2d=[nnz, 2] does not carry image dimensions.  The
+    # intersection offsets retain [..., C, tile_height, tile_width] in
+    # both packed and unpacked modes.
+    image_dims = isect_offsets.shape[:-2]
     channels = colors.shape[-1]
     device = means2d.device
     if packed:
