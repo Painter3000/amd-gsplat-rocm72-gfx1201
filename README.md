@@ -3,11 +3,16 @@
 
 # GSplat for ROCm
 
-**GSplat** is an open-source library for GPU-accelerated rasterization of Gaussians with Python bindings. It is inspired by the SIGGRAPH paper [3D Gaussian Splatting for Real-Time Rendering of Radiance Fields](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/).
+**GSplat** is an open-source library for GPU-accelerated rasterization of Gaussians with Python bindings. It is inspired by the SIGGRAPH paper [3D Gaussian Splatting for Real-Time Rendering of Radiance Fields](https://repo.georgerobotics.com/papers/kerbl23.pdf).
 
 This repository is the HIP port of the original `GSplat` project, optimized for **ROCm**, and designed to run on AMD Instinct™ GPUs. 
 
 ## System Requirements
+
+> [!IMPORTANT]
+> The requirements below describe the upstream MI300X/CDNA3 release. For this
+> fork's validated RDNA 4 configuration (`gfx1201`, ROCm 7.2 and PyTorch 2.13),
+> see [README_ROCM.md](README_ROCM.md).
 
 To use GSplat, you need the following prerequisites:
 
@@ -18,6 +23,12 @@ To use GSplat, you need the following prerequisites:
 - **Python**: version 3.10, 3.12  
 
 ## Installation
+
+> [!CAUTION]
+> Do not use the AMD-hosted `amd_gsplat` wheel for this `gfx1201` port. That
+> package does not contain this fork's Wave32 and PyTorch 2.13 compatibility
+> patches. Clone this repository and follow the source-build instructions in
+> [README_ROCM.md](README_ROCM.md).
 
 1. Install PyTorch (with ROCm support).  
    The easiest method is using the official ROCm PyTorch Docker image:
@@ -39,13 +50,13 @@ To use GSplat, you need the following prerequisites:
    For ROCm 7.0.0:
 
    ```bash
-   docker run --cap-add=SYS_PTRACE --ipc=host --privileged=true      --shm-size=128GB --network=host      --device=/dev/kfd --device=/dev/dri      --group-add video -it -v $HOME:$HOME      --name rocm_pytorch rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.8.0
+   docker run --cap-add=SYS_PTRACE --ipc=host --privileged=true      --shm-size=128GB --network=host      --device=/dev/kfd --device=/dev/dri      --group-add video -it -v $HOME:$HOME      --name rocm7.0 rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.8.0
    ```
 
    For ROCm 6.4.3:
 
    ```bash
-   docker run --cap-add=SYS_PTRACE --ipc=host --privileged=true      --shm-size=128GB --network=host      --device=/dev/kfd --device=/dev/dri      --group-add video -it -v $HOME:$HOME      --name rocm_pytorch rocm/pytorch:rocm6.4.3_ubuntu22.04_py3.10_pytorch_release_2.6.0
+   docker run --cap-add=SYS_PTRACE --ipc=host --privileged=true      --shm-size=128GB --network=host      --device=/dev/kfd --device=/dev/dri      --group-add video -it -v $HOME:$HOME      --name rocm6.4.3 rocm/pytorch:rocm6.4.3_ubuntu22.04_py3.10_pytorch_release_2.6.0
    ```
 
 3. Install GSplat from the AMD-hosted PyPI repository:
@@ -79,7 +90,7 @@ To use GSplat, you need the following prerequisites:
    License: Apache 2.0
    Location: /opt/conda/envs/py_3.12/lib/python3.12/site-packages
    Requires: jaxtyping, ninja, numpy, rich, torch
-
+   ```
 
 ## Examples
 
@@ -111,9 +122,13 @@ We provide a set of examples to get you started.
 
 ## Evaluation
 
+> [!NOTE]
+> The performance figures below are upstream MI300X results. They have not been
+> reproduced or validated on `gfx1201` by this fork.
+
 This repository includes a standalone script that reproduces the official Gaussian Splatting benchmarks with equivalent performance on **PSNR, SSIM, LPIPS**, and the number of converged Gaussians.  
 
-Thanks to GSplat’s optimized GPU implementation:  
+Thanks to GSplat's optimized GPU implementation:  
 - Training uses up to **4× less GPU memory**  
 - Training is up to **15% faster** compared to the official implementation  
 
@@ -121,7 +136,7 @@ Thanks to GSplat’s optimized GPU implementation:
 Refer to the [installation instructions](docs/install/gsplat-install.rst) to learn how to build the GSplat library from source.
 
 ## Contributing
-We welcome contributions of all kinds and are open to feedback, bug-reports, and improvements, to help expand the capabilities of this software. See [contributing to GSplat](docs/about/contribute-to-gsplat.rst) for more info.
+We welcome contributions of all kinds and are open to feedback, bug-reports, and improvements, to help expand the capabilities of this software. See [contributing to GSplat](docs/about/contribute-to-gsplat.rst).
 
 ## Core Development
 
