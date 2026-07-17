@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **ROCm 7.2 / gfx1201 fork:** See [README_ROCM.md](README_ROCM.md) for RDNA 4 build instructions, validation results and known limitations.
+
 # GSplat for ROCm
 
 **GSplat** is an open-source library for GPU-accelerated rasterization of Gaussians with Python bindings. It is inspired by the SIGGRAPH paper [3D Gaussian Splatting for Real-Time Rendering of Radiance Fields](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/).
