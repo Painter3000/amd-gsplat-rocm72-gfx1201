@@ -4,19 +4,21 @@
 # GSplat for ROCm
 
 <!-- PAINTER3000_STATUS_BLOCK_START -->
-## Repository snapshot
+## Quick status
 
-- **Repository type:** RDNA4 / `gfx1201` fork extending AMD-Ecosystem's ROCm port of `gsplat`.
-- **Target GPU:** AMD Radeon AI PRO R9700.
-- **Target architecture:** RDNA4 / `gfx1201` / Wave32.
-- **Target stack:** Ubuntu Linux, ROCm 7.2, Python 3.12, PyTorch `2.13.0+rocm7.2`.
-- **Validation status:** Main forward/backward matrix **15/15 PASS**; targeted multi-camera matrix **8/8 PASS**.
-- **Validated areas:** 3DGS rasterization, packed/unpacked paths, multiple render modes, 2DGS outputs, multi-camera visibility, per-Gaussian and per-view colors.
-- **Upstream base:** AMD-Ecosystem/gsplat `release/1.5.3b2`, commit `b01acd4`; original project lineage from `nerfstudio-project/gsplat`.
-- **ROCm details:** See [`README_ROCM.md`](README_ROCM.md).
+| Type | Target | Validation |
+|---|---|---|
+| RDNA4 / `gfx1201` fork extending AMD-Ecosystem's ROCm `gsplat` port | R9700 / RDNA4 `gfx1201` / Wave32, ROCm 7.2, PyTorch `2.13.0+rocm7.2` | **PASS** — main matrix **15/15**, multi-camera matrix **8/8** |
+
+<details>
+<summary>ROCm validation details</summary>
+
+- Upstream base: AMD-Ecosystem/gsplat `release/1.5.3b2`, commit `b01acd4`
+- Validated areas: 3DGS rasterization, packed/unpacked paths, 2DGS outputs, multi-camera visibility, per-Gaussian and per-view colors
+- ROCm details: see [`README_ROCM.md`](README_ROCM.md)
+
+</details>
 <!-- PAINTER3000_STATUS_BLOCK_END -->
-
-
 **GSplat** is an open-source library for GPU-accelerated rasterization of Gaussians with Python bindings. It is inspired by the SIGGRAPH paper [3D Gaussian Splatting for Real-Time Rendering of Radiance Fields](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/).
 
 This fork extends AMD's HIP port of GSplat to RDNA 4 (`gfx1201`) using
