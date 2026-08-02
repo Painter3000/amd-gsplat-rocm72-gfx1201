@@ -7,11 +7,10 @@
 <details>
 <summary><strong>ROCm / gfx1201 port note</strong></summary>
 
-- Type: RDNA4 / `gfx1201` fork extending AMD-Ecosystem's ROCm `gsplat` port.
+- RDNA4 / `gfx1201` fork extending AMD-Ecosystem's ROCm `gsplat` port.
 - Target: AMD Radeon AI PRO R9700 / RDNA4 / `gfx1201` / Wave32.
 - Stack: ROCm 7.2, Python 3.12, PyTorch `2.13.0+rocm7.2`.
 - Validation: main matrix **15/15 PASS**; multi-camera matrix **8/8 PASS**.
-- Upstream base: AMD-Ecosystem/gsplat `release/1.5.3b2`, commit `b01acd4`.
 - Details: see [`README_ROCM.md`](README_ROCM.md).
 
 </details>
